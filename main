@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Support — Roblox Hub</title>
+  <style>
+    :root{--bg:#071022;--panel:#0b1220;--muted:#98a6b3;--accent:#7ef3c9;--accent-2:#4ee0a0;--danger:#ff6b6b}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#041028 0%, #071022 60%);color:#dbeaf0;min-height:100vh}
+    .container{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#052036,#09324a);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:20px;box-shadow:0 6px 30px rgba(2,6,12,0.6)}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    nav{margin-top:18px;display:flex;gap:8px}
+    .tab{padding:10px 14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
+    .tab.active{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#042024;font-weight:700}
+
+    .layout{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:16px}
+    @media (max-width:980px){.layout{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(2,6,12,0.6)}
+    h2{margin-top:0}
+
+    /* form */
+    label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+    input[type=text], select, textarea, input[type=email]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:14px}
+    textarea{min-height:120px;resize:vertical}
+    .row{display:flex;gap:10px}
+    .row .col{flex:1}
+
+    .actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+    button{border:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#022b21;font-weight:700}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+    .muted{color:var(--muted);font-size:13px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:13px;margin-right:6px}
+
+    .list-item{padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px}
+    .list-meta{font-size:12px;color:var(--muted)}
+    .tiny{font-size:12px;color:var(--muted)}
+
+    .file-preview img{max-width:100%;border-radius:8px;margin-top:8px}
+    .controls{display:flex;gap:6px}
+    .danger{background:linear-gradient(90deg,#ff7b7b,#ff5959);color:#3b0404}
+
+    footer{margin-top:14px;color:var(--muted);font-size:12px}
+
+    /* home list styles */
+    .idea{padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));margin-bottom:10px}
+    .idea h4{margin:0 0 6px 0}
+    .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">RB</div>
+      <div>
+        <h1>Roblox Hub — Support & Ideas</h1>
+        <p class="lead">Тёмная панель поддержки с вкладками: Главная, Жалобы/Баги, Предложения/Комментарии. Все данные хранятся локально (localStorage).</p>
+      </div>
+    </header>
+
+    <nav id="tabs">
+      <button class="tab active" data-tab="home">Главная</button>
+      <button class="tab" data-tab="bugs">Жалобы и баги</button>
+      <button class="tab" data-tab="ideas">Предложения и комментарии</button>
+    </nav>
+
+    <div class="layout">
+      <main class="card" id="main">
+        <!-- content injected by JS -->
+      </main>
+
+      <aside class="card">
+        <h3>Подсказки</h3>
+        <p class="muted">Используй форму справа для создания записи. Все записи видны локально — можно редактировать и удалять. При желании позже подключим сервер.</p>
+
+        <div style="margin-top:12px">
+          <div class="pill">Типы: Баги / Жалобы / Предложения</div>
+          <div class="pill">Сохранение: localStorage</div>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)" />
+
+        <div>
+          <button id="exportBtn" class="btn-ghost" style="padding:8px 10px">Экспорт JSON</button>
+          <button id="clearAll" class="btn-ghost" style="padding:8px 10px">Очистить всё</button>
+          <div id="exportResult" class="tiny" style="margin-top:8px;white-space:pre-wrap"></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer style="text-align:center">Поддержка — Roblox Hub • Сохранено локально</footer>
+  </div>
+
+  <script>
+    // Data model in localStorage
+    const STORE_KEY = 'rb_support_records_v1';
+
+    // initial ideas for Home (Roblox game concepts)
+    const GAME_IDEA_LIST = [
+      {title:'Градостроительный сим (Tiny City Tycoon)', desc:'Игроки строят город на островах, управляют ресурсами, привлекают жителей, соревнуются в рейтингах. Есть события — ураганы, фестивали. Микротранзакции: косметика.'},
+      {title:'Шпионская школа (Spy Academy)', desc:'Ролевой проект с квестами: ученики изучают гаджеты, выполняют миссии, соревнуются в командных операциях. Можно прокачивать навыки и гаджеты.'},
+      {title:'Парк аттракционов (Builder Park)', desc:'Пользователи создают и управляют своими аттракционами. Другие игроки платят за вход. Соревнования за самый популярный парк.'},
+      {title:'Похищение инопланетянами (Alien Abduction RP)', desc:'RP-игра где часть игроков — инопланетяне с уникальными способностями, остальные — выжившие. Механика скрытности и побега.'},
+      {title:'Кибергонки (Neon Racers)', desc:'Футуристические гоночные треки с кастомизацией машин и режимом трассы-строителя для игроков.'},
+      {title:'Магическая школа (Arcane Academy)', desc:'Мир магии: квесты, дуэли, лаборатории для создания зелий. Сезонные события и коллекционные артефакты.'},
+      {title:'Остров выживания (Castaway Islands)', desc:'Мультиплеер выживания — строй убежище, исследуй острова, сражайся с боссами, торгуй с другими игроками.'},
+      {title:'Конструктор квестов (Quest Creator)', desc:'Инструмент внутри игры для создания и обмена пользовательских квестов: авторы получают награды по популярности.'},
+      {title:'Кулинарный челлендж (Chef Wars)', desc:'Ритм-игра и симулятор кухни: готовь блюда под таймер, соревнуйся в кулинарных дуэлях, открой ресторан.'},
+      {title:'Город-призрак (Haunted Metropolis)', desc:'Хоррор-игра с атмосферой: расследования, пазлы, кооперативные побеги. Меняющиеся карты и ночные режимы.'},
+      {title:'Сборочная линия роботов (Robo Factory)', desc:'Пазл-сим с программированием простых ботов: игроки создают механизмы и решают задачи автоматизации.'},
+      {title:'Мини-игры MMO (Arcade Plaza)', desc:'Площадь с множеством мини-игр: баттл-арены, платформеры, пазлы — сборник с рейтингами и сезонными наградами.'}
+    ];
+
+    // UI render
+    const main = document.getElementById('main');
+    const tabs = document.querySelectorAll('.tab');
+
+    function getStore(){
+      try{ return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }catch(e){return []}
+    }
+    function setStore(arr){ localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }
+
+    function renderHome(){
+      main.innerHTML = '';
+      const el = document.createElement('div');
+      el.innerHTML = `
+        <h2>Главная — Идеи для Roblox</h2>
+        <p class="muted">Ниже — готовые концепты игр, которые ты можешь реализовать в Roblox. Используй их как вдохновение или изменяй под себя.</p>
+        <div style="margin-top:12px" id="ideasList"></div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)" />
+        <h3>Последние записи</h3>
+        <div id="recentRecords"></div>
+      `;
+      main.appendChild(el);
+
+      const ideasList = document.getElementById('ideasList');
+      GAME_IDEA_LIST.forEach(i=>{
+        const d = document.createElement('div'); d.className='idea';
+        d.innerHTML = `<h4>${i.title}</h4><div class="tiny">${i.desc}</div>`;
+        ideasList.appendChild(d);
+      });
+
+      renderRecent();
+    }
+
+    function renderForm(kind){
+      main.innerHTML = '';
+      const card = document.createElement('div');
+      card.innerHTML = `
+        <h2>${kind === 'bugs' ? 'Жалоба / Баг' : 'Предложение / Комментарий'}</h2>
+        <p class="muted">Заполни поля: ник, краткая тема и подробное описание. Можно прикрепить скрин.</p>
+        <form id="recordForm">
+          <label>Никнейм</label>
+          <input name="nick" type="text" placeholder="Ivan123" required />
+
+          <label style="margin-top:8px">Тема</label>
+          <input name="title" type="text" placeholder="Коротко о проблеме или идее" required />
+
+          <label style="margin-top:8px">Описание</label>
+          <textarea name="message" placeholder="Подробно опиши: шаги, версия клиента, время, регион..."></textarea>
+
+          <div class="row" style="margin-top:8px">
+            <div class="col">
+              <label>Платформа</label>
+              <select name="platform"><option>PC</option><option>Mobile</option><option>Console</option><option>Other</option></select>
+            </div>
+            <div style="width:130px">
+              <label>Приоритет</label>
+              <select name="priority"><option>Нормальный</option><option>Высокий</option><option>Низкий</option></select>
+            </div>
+          </div>
+
+          <label style="margin-top:8px">Прикрепить скрин (опционально)</label>
+          <input type="file" name="screenshot" accept="image/*" />
+          <div class="file-preview" id="filePreview"></div>
+
+          <div class="actions">
+            <button class="btn-primary" type="submit">Сохранить</button>
+            <button type="button" class="btn-ghost" id="cancelBtn">Отмена</button>
+          </div>
+        </form>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)" />
+        <h3>Список записей (${kind === 'bugs' ? 'Жалобы/Баги' : 'Предложения'})</h3>
+        <div id="recordsList"></div>
+      `;
+      main.appendChild(card);
+
+      const form = document.getElementById('recordForm');
+      const fileInput = form.querySelector('input[type=file]');
+      const filePreview = document.getElementById('filePreview');
+      fileInput.addEventListener('change', ()=>{
+        filePreview.innerHTML = '';
+        const f = fileInput.files[0];
+        if(!f) return;
+        if(f.size > 5*1024*1024){ filePreview.textContent = 'Файл слишком большой (макс 5MB)'; fileInput.value=''; return; }
+        const r = new FileReader(); r.onload = ()=>{
+          const img = document.createElement('img'); img.src = r.result; filePreview.appendChild(img);
+        }; r.readAsDataURL(f);
+      });
+
+      form.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(form);
+        const payload = { id: Date.now(), kind, nick: fd.get('nick'), title: fd.get('title'), message: fd.get('message'), platform: fd.get('platform'), priority: fd.get('priority'), createdAt: new Date().toISOString() };
+        const f = fileInput.files[0];
+        if(f){ payload.screenshot = await readFileAsDataURL(f); payload.screenshotName = f.name; }
+        const records = getStore(); records.unshift(payload); setStore(records);
+        renderForm(kind); // re-render
+      });
+
+      document.getElementById('cancelBtn').addEventListener('click', ()=>{ selectTab('home'); });
+
+      renderRecords(kind);
+    }
+
+    function renderRecords(kind){
+      const container = document.getElementById('recordsList');
+      const records = getStore().filter(r=>r.kind === kind);
+      if(!records.length){ container.innerHTML = '<div class="muted">Нет записей — будь первым!</div>'; return; }
+      container.innerHTML = '';
+      records.forEach(r=>{
+        const d = document.createElement('div'); d.className='list-item';
+        d.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div>
+              <strong>${escapeHtml(r.title)}</strong>
+              <div class="list-meta">${escapeHtml(r.nick)} • ${r.platform} • ${new Date(r.createdAt).toLocaleString()} • <em>${r.priority}</em></div>
+            </div>
+            <div class="controls">
+              <button class="btn-ghost" data-id="${r.id}" data-action="view">Открыть</button>
+              <button class="btn-ghost" data-id="${r.id}" data-action="edit">Редактировать</button>
+              <button class="danger" data-id="${r.id}" data-action="delete">Удалить</button>
+            </div>
+          </div>
+        `;
+        if(r.screenshot){ const img = document.createElement('img'); img.src = r.screenshot; img.style.maxWidth='160px'; img.style.marginTop='8px'; d.appendChild(img); }
+        const msg = document.createElement('div'); msg.className='tiny'; msg.style.marginTop='8px'; msg.textContent = r.message || '';
+        d.appendChild(msg);
+        container.appendChild(d);
+      });
+
+      container.addEventListener('click',(e)=>{
+        const btn = e.target.closest('button'); if(!btn) return;
+        const id = Number(btn.dataset.id); const action = btn.dataset.action;
+        if(action === 'delete'){ if(confirm('Удалить запись?')){ const all = getStore().filter(x=>x.id!==id); setStore(all); renderRecords(kind); } }
+        if(action === 'view'){ const rec = getStore().find(x=>x.id===id); if(rec) alert(`Тема: ${rec.title}
+Автор: ${rec.nick}
+Платформа: ${rec.platform}
+Приоритет: ${rec.priority}
+
+${rec.message}`); }
+        if(action === 'edit'){ const rec = getStore().find(x=>x.id===id); if(rec) openEdit(rec); }
+      });
+    }
+
+    function openEdit(rec){
+      main.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `
+        <h2>Редактировать запись</h2>
+        <form id="editForm">
+          <label>Никнейм</label>
+          <input name="nick" type="text" required />
+          <label style="margin-top:8px">Тема</label>
+          <input name="title" type="text" required />
+          <label style="margin-top:8px">Описание</label>
+          <textarea name="message"></textarea>
+          <div class="actions" style="margin-top:8px">
+            <button class="btn-primary" type="submit">Сохранить</button>
+            <button type="button" class="btn-ghost" id="cancelEdit">Отмена</button>
+          </div>
+        </form>
+      `;
+      main.appendChild(wrap);
+      const form = document.getElementById('editForm');
+      form.nick.value = rec.nick; form.title.value = rec.title; form.message.value = rec.message;
+      document.getElementById('cancelEdit').addEventListener('click', ()=> selectTab(rec.kind));
+      form.addEventListener('submit',(e)=>{ e.preventDefault(); const fd = new FormData(form); const all = getStore().map(x=> x.id===rec.id ? {...x, nick: fd.get('nick'), title: fd.get('title'), message: fd.get('message')} : x); setStore(all); selectTab(rec.kind); });
+    }
+
+    function renderRecent(){
+      const div = document.getElementById('recentRecords');
+      const recs = getStore().slice(0,6);
+      if(!recs.length){ div.innerHTML = '<div class="muted">Записей пока нет</div>'; return; }
+      div.innerHTML = '';
+      recs.forEach(r=>{ const d = document.createElement('div'); d.className='list-item'; d.innerHTML = `<strong>${escapeHtml(r.title)}</strong><div class="list-meta">${escapeHtml(r.nick)} • ${r.kind} • ${new Date(r.createdAt).toLocaleString()}</div>`; div.appendChild(d); });
+    }
+
+    // helpers
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+    function readFileAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(); r.readAsDataURL(file); }); }
+
+    // tab logic
+    function selectTab(name){ tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name)); if(name==='home') renderHome(); if(name==='bugs') renderForm('bugs'); if(name==='ideas') renderForm('ideas'); }
+    tabs.forEach(t=>t.addEventListener('click', ()=>selectTab(t.dataset.tab)));
+
+    // export / clear
+    document.getElementById('exportBtn').addEventListener('click', ()=>{ const data = JSON.stringify(getStore(), null, 2); document.getElementById('exportResult').textContent = data; navigator.clipboard?.writeText(data).catch(()=>{}); });
+    document.getElementById('clearAll').addEventListener('click', ()=>{ if(confirm('Очистить все записи?')){ setStore([]); renderHome(); document.getElementById('exportResult').textContent=''; } });
+
+    // init
+    selectTab('home');
+  </script>
+</body>
+</html>
